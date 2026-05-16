@@ -1,0 +1,190 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<title>Vendi MVP Pro</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<style>
+body{font-family:Arial;margin:0;background:#0f0f0f;color:white;}
+header{background:#111;padding:15px;text-align:center;}
+.container{padding:15px;max-width:900px;margin:auto;}
+.card{background:#1c1c1c;padding:15px;border-radius:10px;margin:10px 0;}
+input,button{width:100%;padding:10px;margin:5px 0;border:none;border-radius:6px;}
+button{background:#25D366;color:white;cursor:pointer;}
+.product{background:#2a2a2a;padding:10px;margin:10px 0;border-radius:10px;}
+a{color:white;text-decoration:none;}
+.small{font-size:12px;opacity:0.7;}
+.hidden{display:none;}
+.stat{background:#222;padding:10px;border-radius:8px;margin-top:10px;}
+</style>
+</head>
+
+<body>
+
+<header>
+<h2>VENDI PRO - Tu tienda en WhatsApp</h2>
+</header>
+
+<div class="container">
+
+<!-- CREAR TIENDA -->
+<div class="card" id="createStore">
+<h3>Crear tienda</h3>
+<input id="storeName" placeholder="Nombre tienda">
+<input id="phone" placeholder="WhatsApp (504...)">
+<button onclick="createStore()">Crear tienda</button>
+</div>
+
+<!-- DASHBOARD -->
+<div class="card hidden" id="dashboard">
+<h3>Panel de tienda</h3>
+
+<p>🔗 Link:</p>
+<p id="link"></p>
+
+<div class="stat">
+Visitas: <span id="visits">0</span><br>
+Clicks WhatsApp: <span id="clicks">0</span>
+</div>
+
+<h4>Agregar producto</h4>
+<input id="pname" placeholder="Nombre">
+<input id="pprice" placeholder="Precio">
+<button onclick="addProduct()">Agregar</button>
+
+<h4>Productos</h4>
+<div id="list"></div>
+
+<button onclick="openStore()">Ver tienda pública</button>
+</div>
+
+<!-- TIENDA PUBLICA -->
+<div class="card hidden" id="storeView">
+<h2 id="storeTitle"></h2>
+<div id="storeProducts"></div>
+</div>
+
+</div>
+
+<script>
+
+let store = JSON.parse(localStorage.getItem("store"));
+let products = JSON.parse(localStorage.getItem("products")) || [];
+
+function slug(t){
+return t.toLowerCase().replace(/\s+/g,'-');
+}
+
+// ===== CREAR TIENDA =====
+function createStore(){
+let name=document.getElementById("storeName").value;
+let phone=document.getElementById("phone").value;
+
+store={name,phone,slug:slug(name)};
+localStorage.setItem("store",JSON.stringify(store));
+
+showDashboard();
+}
+
+// ===== DASHBOARD =====
+function showDashboard(){
+document.getElementById("createStore").classList.add("hidden");
+document.getElementById("dashboard").classList.remove("hidden");
+
+document.getElementById("link").innerText =
+window.location.href + "?store=" + store.slug;
+
+updateStats();
+render();
+}
+
+// ===== PRODUCTOS =====
+function addProduct(){
+let name=document.getElementById("pname").value;
+let price=document.getElementById("pprice").value;
+
+products.push({name,price});
+localStorage.setItem("products",JSON.stringify(products));
+render();
+}
+
+function render(){
+let html="";
+products.forEach(p=>{
+html+=`
+<div class="product">
+<b>${p.name}</b><br>
+L. ${p.price}<br>
+<a href="#" onclick="trackClick();wa('${p.name}')">
+Comprar por WhatsApp
+</a>
+</div>`;
+});
+document.getElementById("list").innerHTML=html;
+}
+
+// ===== WHATSAPP =====
+function wa(name){
+window.open(
+`https://wa.me/${store.phone}?text=Quiero%20comprar%20${name}`,
+"_blank"
+);
+}
+
+// ===== TRACK CLICK =====
+function trackClick(){
+let c=localStorage.getItem("clicks")||0;
+c++;
+localStorage.setItem("clicks",c);
+updateStats();
+}
+
+// ===== VISITAS =====
+function trackVisit(){
+let v=localStorage.getItem("visits")||0;
+v++;
+localStorage.setItem("visits",v);
+}
+
+// ===== STATS =====
+function updateStats(){
+document.getElementById("visits").innerText=localStorage.getItem("visits")||0;
+document.getElementById("clicks").innerText=localStorage.getItem("clicks")||0;
+}
+
+// ===== TIENDA PUBLICA =====
+function openStore(){
+document.getElementById("dashboard").classList.add("hidden");
+document.getElementById("storeView").classList.remove("hidden");
+
+document.getElementById("storeTitle").innerText=store.name;
+
+let html="";
+products.forEach(p=>{
+html+=`
+<div class="product">
+<h3>${p.name}</h3>
+<p>L. ${p.price}</p>
+<a onclick="trackClick();wa('${p.name}')">Comprar</a>
+</div>`;
+});
+
+document.getElementById("storeProducts").innerHTML=html;
+}
+
+// ===== INIT =====
+function init(){
+trackVisit();
+
+if(store){
+showDashboard();
+}
+}
+
+init();
+
+</script>
+
+</body>
+</html>
